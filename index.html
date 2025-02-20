@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Persistent Media Player with Full-Screen Video & 3D KhanOsama</title>
+    <title>Persistent Media Player with Cloud Cache & Responsive Visualizer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <!-- Lottie Library for potential future animations -->
+    <!-- Lottie Library for potential animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.10.2/lottie.min.js"></script>
     <style>
-      /* Overall black theme */
+      /* Overall Black Theme */
       body {
         margin: 0;
         padding: 0;
@@ -36,7 +36,7 @@
         overflow: hidden;
         transition: all 0.3s ease;
       }
-      /* Header: title and button group (hidden when video plays) */
+      /* Header: Title and Button Group (hidden when video plays) */
       .header {
         display: flex;
         justify-content: space-between;
@@ -53,8 +53,8 @@
         font-weight: bold;
         color: #1e90ff;
         margin-left: 5px;
-        /* Increased 3D size */
-        transform: perspective(300px) rotateX(10deg) scale(1.3);
+        /* Increase 3D effect and scale */
+        transform: perspective(300px) rotateX(10deg) scale(1.0);
         background: linear-gradient(270deg, #1e90ff, #00bfff, #1e90ff);
         background-size: 400% 400%;
         -webkit-background-clip: text;
@@ -88,7 +88,7 @@
       .add-music-btn i {
         font-size: 1rem;
       }
-      /* Visualizer / Media Container */
+      /* Visualizer/Media Container */
       .visualizer-container {
         width: 100%;
         height: 150px;
@@ -99,14 +99,15 @@
         margin-bottom: 1rem;
         transition: height 0.3s ease;
       }
-      /* When video plays, expand container to fill full screen */
+      /* When video plays, expand visualizer to fill full screen (top & bottom) */
       .visualizer-container.video-playing {
         height: 100vh;
       }
-      /* Hide overlays (seek bar, lightning etc.) when video plays */
+      /* Hide overlays when video plays */
       .visualizer-container.video-playing #lightning-visualizer,
       .visualizer-container.video-playing #sea-wave,
-      .visualizer-container.video-playing #glow-text {
+      .visualizer-container.video-playing #glow-text,
+      .visualizer-container.video-playing .time-display {
         display: none;
       }
       /* Lightning Visualizer Canvas */
@@ -133,7 +134,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 2rem;
+        font-size: 1.5rem;  /* Smaller than before */
         font-weight: bold;
         color: #1e90ff;
         text-shadow: 0 0 10px #1e90ff;
@@ -141,13 +142,13 @@
         z-index: 3;
         transition: filter 0.2s ease, transform 0.2s ease;
       }
-      /* Media video element styling */
+      /* Video Element */
       #media-video {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
-      /* Time Display & Seek Bar (hidden when video plays) */
+      /* Time Display & Seek Bar (hidden in video mode) */
       .time-display {
         display: flex;
         justify-content: space-between;
@@ -155,10 +156,6 @@
         margin: 0.5rem 0;
         font-size: 0.8rem;
         transition: opacity 0.3s ease;
-      }
-      .time-display.hidden {
-        opacity: 0;
-        pointer-events: none;
       }
       .progress-bar {
         position: relative;
@@ -170,10 +167,6 @@
         cursor: pointer;
         overflow: hidden;
         transition: opacity 0.3s ease;
-      }
-      .progress-bar.hidden {
-        opacity: 0;
-        pointer-events: none;
       }
       .progress {
         position: absolute;
@@ -221,7 +214,7 @@
       .playlist li:hover {
         background: #222;
       }
-      /* Controls (always visible) */
+      /* Controls (always visible for playback control) */
       .controls {
         display: flex;
         justify-content: center;
@@ -336,7 +329,7 @@
         <div id="glow-text">KhanOsama</div>
         <!-- Video element will be injected here when needed -->
       </div>
-      <!-- Time Display & Seek Bar -->
+      <!-- Time Display & Seek Bar (hidden when video playing) -->
       <div class="time-display" id="time-display">
         <span id="current-time">0:00</span>
         <div class="progress-bar" id="progress-bar">
@@ -395,8 +388,8 @@
       const buttonGroup = document.getElementById("button-group");
       const container = document.getElementById("container");
       const mediaContainer = document.getElementById("media-container");
-      const progressBar = document.getElementById("progress-bar");
       const timeDisplay = document.getElementById("time-display");
+      const progressBar = document.getElementById("progress-bar");
       const progress = document.getElementById("progress");
       const slider = document.getElementById("slider");
       const currentTimeEl = document.getElementById("current-time");
@@ -449,7 +442,7 @@
         navigator.mediaSession.setActionHandler("nexttrack", () => playNext());
       }
   
-      // File input handling and caching.
+      // Handle file input and caching.
       document.querySelector(".add-music-btn").addEventListener("click", () => fileInput.click());
       fileInput.addEventListener("change", async (e) => {
         const files = Array.from(e.target.files);
@@ -460,8 +453,13 @@
             lastPlayedTime: 0
           };
           songs.push(song);
+          // Save in Cache storage
           const cache = await caches.open("media-cache");
           await cache.put(`/media/${file.name}`, new Response(file));
+          // Additionally store in localStorage for persistence on device.
+          // Cloud Storage integration:
+          // Here you could add your integration code with a cloud storage service (e.g. Firebase Storage or AWS S3)
+          // to upload and retrieve the file so that songs persist across app reinstallations.
         }
         localStorage.setItem("songs", JSON.stringify(songs));
         renderPlaylist();
@@ -526,7 +524,7 @@
         if (updateTimer) clearInterval(updateTimer);
       }
   
-      // Play Song.
+      // Play Song function.
       async function playSong(index) {
         stopCurrentMedia();
         currentSongIndex = index;
@@ -703,12 +701,11 @@
         requestAnimationFrame(animateSeaWave);
       }
   
-      // Draw Sea Wave: Smooth continuous flow with water level rising with the song progress.
+      // Draw Sea Wave: Smooth continuous flow; level rises with song progress.
       function drawSeaWave() {
         let current = mediaElement.currentTime;
         let duration = mediaElement.duration;
-        let progressRatio = duration ? current/duration : 0;
-        // Baseline goes from bottom (at song start) to top (at song end)
+        let progressRatio = duration ? current / duration : 0;
         let baseline = seaCanvas.height * (1 - progressRatio);
         let amplitude = 5;
         waveOffset += 0.1;
@@ -729,20 +726,20 @@
         seaCtx.stroke();
       }
   
-      // Draw Lightning Visualizer: 3D bolts and sync KhanOsama text glow/scale with music frequency.
+      // Draw Lightning Visualizer: 3D bolts & animate KhanOsama text glow and scale with music frequency.
       function drawLightningVisualizer() {
         if (!analyser || !dataArray) return;
         analyser.getByteFrequencyData(dataArray);
-        let average = Array.from(dataArray).reduce((sum, val) => sum + val, 0)/bufferLength;
+        let average = Array.from(dataArray).reduce((sum, val) => sum + val, 0) / bufferLength;
         lightningCtx.clearRect(0, 0, lightningCanvas.width, lightningCanvas.height);
         if (average > 80) {
-          let boltCount = Math.floor((average - 80)/10) + 1;
+          let boltCount = Math.floor((average - 80) / 10) + 1;
           for (let i = 0; i < boltCount; i++) {
             drawLightningBolt();
           }
           lightningCtx.fillStyle = "rgba(0, 0, 0, 0.1)";
           lightningCtx.fillRect(0, 0, lightningCanvas.width, lightningCanvas.height);
-          let randomColor = '#' + (Math.floor(Math.random()*16777215)).toString(16).padStart(6,'0');
+          let randomColor = '#' + (Math.floor(Math.random() * 16777215)).toString(16).padStart(6,'0');
           glowText.style.filter = `drop-shadow(0px 0px 20px ${randomColor})`;
           let scaleVal = 1 + average/255;
           glowText.style.transform = `translate(-50%, -50%) scale(${scaleVal})`;
@@ -755,7 +752,7 @@
       function drawLightningBolt() {
         lightningCtx.strokeStyle = "rgba(255,255,255,0.8)";
         lightningCtx.lineWidth = 2;
-        let startX = Math.random()*lightningCanvas.width;
+        let startX = Math.random() * lightningCanvas.width;
         let startY = 0;
         lightningCtx.beginPath();
         lightningCtx.moveTo(startX, startY);
@@ -763,28 +760,25 @@
         let currentY = startY;
         const segments = 10;
         for (let i = 0; i < segments; i++) {
-          currentX += (Math.random()-0.5)*20;
-          currentY += Math.random()*(lightningCanvas.height/segments);
+          currentX += (Math.random() - 0.5) * 20;
+          currentY += Math.random() * (lightningCanvas.height/segments);
           lightningCtx.lineTo(currentX, currentY);
         }
         lightningCtx.stroke();
       }
   
-      // On load, if there is a cached song in localStorage, resume playback.
+      // Auto-resume playback if a song was cached, and store the last played song index.
       window.addEventListener("load", () => {
-        // Check for last played song index (store in localStorage if needed)
         const lastIndex = localStorage.getItem("lastSongIndex");
         if (lastIndex !== null && songs[lastIndex]) {
           playSong(parseInt(lastIndex));
         }
       });
-  
-      // Before unload, store the current song index.
       window.addEventListener("beforeunload", () => {
         localStorage.setItem("lastSongIndex", currentSongIndex);
       });
   
-      // Initialize the playlist.
+      // Initialize Playlist.
       renderPlaylist();
     </script>
   </body>
