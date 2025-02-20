@@ -101,7 +101,7 @@
       }
       /* When video plays, expand visualizer to fill full screen (top & bottom) */
       .visualizer-container.video-playing {
-        height: 100vh;
+        height: calc(100vh - 60px); /* Adjust height to fit the screen */
       }
       /* Hide overlays when video plays */
       .visualizer-container.video-playing #lightning-visualizer,
