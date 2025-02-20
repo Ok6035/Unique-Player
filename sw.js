@@ -3,7 +3,7 @@ const CACHE_NAME = 'media-cache-v1';
 const assetsToCache = [
   '/',
   '/index.html'
-  // Add additional assets (CSS, JS, images) as needed.
+  // Add any additional assets if necessary.
 ];
 
 self.addEventListener('install', event => {
