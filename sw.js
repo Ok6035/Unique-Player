@@ -1,9 +1,8 @@
-// sw.js - Service Worker for persistent media caching.
 const CACHE_NAME = 'media-cache-v1';
 const assetsToCache = [
   '/',
   '/index.html'
-  // Add any additional assets if necessary.
+  // Add additional assets (CSS, JS, images) as needed.
 ];
 
 self.addEventListener('install', event => {
@@ -32,18 +31,15 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Serve media file requests from cache first.
   if (event.request.url.includes('/media/')) {
     event.respondWith(
-      caches.match(event.request).then(response => {
-        if (response) return response;
-        return fetch(event.request).then(networkRes => {
+      caches.match(event.request)
+        .then(response => response || fetch(event.request).then(networkRes => {
           return caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, networkRes.clone());
             return networkRes;
           });
-        });
-      })
+        }))
     );
   } else {
     event.respondWith(
